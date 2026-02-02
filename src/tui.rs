@@ -1,3 +1,5 @@
+//! TUI module for interactive session management.
+
 use crate::session::{Session, SessionStatus};
 use crate::tmux::list_sessions;
 use crossterm::{
@@ -11,6 +13,7 @@ use ratatui::{
 };
 use std::io::{self, stdout};
 
+/// TUI application state.
 pub struct App {
     sessions: Vec<Session>,
     table_state: TableState,
@@ -19,6 +22,8 @@ pub struct App {
 }
 
 impl App {
+    /// Creates a new TUI application instance.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             sessions: Vec::new(),
@@ -28,6 +33,7 @@ impl App {
         }
     }
 
+    /// Refreshes the session list from tmux.
     pub fn refresh_sessions(&mut self) {
         self.sessions = list_sessions().unwrap_or_default();
         if !self.sessions.is_empty() && self.table_state.selected().is_none() {
@@ -143,14 +149,14 @@ pub fn run() -> io::Result<Option<String>> {
     Ok(app.selected_session)
 }
 
-fn ui(frame: &mut Frame, app: &mut App) {
+fn ui(frame: &mut Frame<'_>, app: &mut App) {
     let area = frame.area();
 
     let header = Row::new(vec!["Name", "Status", "Windows", "Working Directory"])
         .style(Style::default().bold())
         .bottom_margin(1);
 
-    let rows: Vec<Row> = app
+    let rows: Vec<Row<'_>> = app
         .sessions
         .iter()
         .map(|session| {

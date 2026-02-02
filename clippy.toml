@@ -1,0 +1,11 @@
+# Clippy configuration for AMS
+# See: https://doc.rust-lang.org/clippy/configuration.html
+
+# Minimum supported Rust version
+msrv = "1.70.0"
+
+# Cognitive complexity threshold
+cognitive-complexity-threshold = 25
+
+# Allow certain patterns in type names
+allowed-duplicate-crates = []

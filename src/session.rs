@@ -1,3 +1,5 @@
+//! Session types and data structures.
+
 use chrono::{DateTime, Utc};
 use std::path::PathBuf;
 
@@ -15,9 +17,9 @@ pub enum SessionStatus {
 impl std::fmt::Display for SessionStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SessionStatus::Active => write!(f, "Active"),
-            SessionStatus::Idle => write!(f, "Idle"),
-            SessionStatus::Dead => write!(f, "Dead"),
+            Self::Active => write!(f, "Active"),
+            Self::Idle => write!(f, "Idle"),
+            Self::Dead => write!(f, "Dead"),
         }
     }
 }

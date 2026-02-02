@@ -5,6 +5,9 @@ edition = "2021"
 description = "Agents Manager Service - Manage AI coding agent tmux sessions"
 authors = ["Ofek"]
 license = "MIT"
+repository = "https://github.com/tupe12334/ams"
+keywords = ["tmux", "tui", "cli", "session-manager", "ai-agents"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

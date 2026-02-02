@@ -1,23 +1,31 @@
+//! Tmux command wrapper and session management.
+
 use crate::session::{Session, SessionStatus};
 use chrono::{TimeZone, Utc};
 use std::path::PathBuf;
 use std::process::Command;
 use thiserror::Error;
 
+/// Errors that can occur when interacting with tmux.
 #[derive(Error, Debug)]
 pub enum TmuxError {
+    /// Failed to execute a tmux command.
     #[error("Failed to execute tmux command: {0}")]
     CommandFailed(#[from] std::io::Error),
 
+    /// Failed to parse tmux output.
     #[error("Failed to parse tmux output: {0}")]
     ParseError(String),
 
+    /// Tmux server is not running.
     #[error("Tmux server not running")]
     ServerNotRunning,
 
+    /// Session with the given name was not found.
     #[error("Session not found: {0}")]
     SessionNotFound(String),
 
+    /// Session with the given name already exists.
     #[error("Session already exists: {0}")]
     SessionExists(String),
 }
@@ -85,14 +93,14 @@ fn parse_sessions(output: &str) -> Result<Vec<Session>, TmuxError> {
             .timestamp_opt(activity_epoch, 0)
             .single()
             .ok_or_else(|| {
-                TmuxError::ParseError(format!("Invalid activity epoch: {}", activity_epoch))
+                TmuxError::ParseError(format!("Invalid activity epoch: {activity_epoch}"))
             })?;
 
         let created_at = Utc
             .timestamp_opt(created_epoch, 0)
             .single()
             .ok_or_else(|| {
-                TmuxError::ParseError(format!("Invalid created epoch: {}", created_epoch))
+                TmuxError::ParseError(format!("Invalid created epoch: {created_epoch}"))
             })?;
 
         let working_directory = PathBuf::from(parts[4]);
@@ -168,7 +176,7 @@ pub fn kill_session(name: &str) -> Result<(), TmuxError> {
 
 /// Gets information about a specific session
 pub fn get_session(name: &str) -> Result<Session, TmuxError> {
-    let filter = format!("#{{==:#{{session_name}},{}}}", name);
+    let filter = format!("#{{==:#{{session_name}},{name}}}");
     let output = Command::new("tmux")
         .args([
             "list-sessions",
