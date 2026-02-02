@@ -11,6 +11,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Launch interactive TUI (default)
+    Tui,
     /// List all tmux sessions
     List,
     /// Attach to a tmux session
@@ -37,7 +39,8 @@ fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Some(Commands::List) | None => run_list(),
+        Some(Commands::Tui) | None => run_tui(),
+        Some(Commands::List) => run_list(),
         Some(Commands::Attach { name }) => run_attach(&name),
         Some(Commands::New { name, directory }) => run_new(&name, directory.as_deref()),
         Some(Commands::Kill { name }) => run_kill(&name),
@@ -47,6 +50,13 @@ fn main() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
+}
+
+fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(session_name) = ams::tui::run()? {
+        ams::attach_session(&session_name)?;
+    }
+    Ok(())
 }
 
 fn run_attach(name: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -76,8 +86,8 @@ fn run_list() -> Result<(), Box<dyn std::error::Error>> {
 
     // Print header
     println!(
-        "{:<20} {:<8} {:<35} {}",
-        "NAME", "STATUS", "WORKING DIR", "LAST ACTIVITY"
+        "{:<20} {:<8} {:<35} LAST ACTIVITY",
+        "NAME", "STATUS", "WORKING DIR"
     );
 
     // Print sessions

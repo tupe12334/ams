@@ -10,6 +10,8 @@ license = "MIT"
 clap = { version = "4", features = ["derive"] }
 chrono = "0.4"
 thiserror = "1"
+ratatui = "0.29"
+crossterm = "0.28"
 
 [dev-dependencies]
 cargo-husky = { version = "1", features = ["precommit-hook", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt"] }
