@@ -38,3 +38,43 @@ pub struct Session {
     /// Number of windows in the session
     pub window_count: u32,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_session_status_display_active() {
+        assert_eq!(SessionStatus::Active.to_string(), "Active");
+    }
+
+    #[test]
+    fn test_session_status_display_idle() {
+        assert_eq!(SessionStatus::Idle.to_string(), "Idle");
+    }
+
+    #[test]
+    fn test_session_status_display_dead() {
+        assert_eq!(SessionStatus::Dead.to_string(), "Dead");
+    }
+
+    #[test]
+    fn test_session_status_equality() {
+        assert_eq!(SessionStatus::Active, SessionStatus::Active);
+        assert_ne!(SessionStatus::Active, SessionStatus::Idle);
+        assert_ne!(SessionStatus::Idle, SessionStatus::Dead);
+    }
+
+    #[test]
+    fn test_session_status_clone() {
+        let status = SessionStatus::Active;
+        let cloned = status.clone();
+        assert_eq!(status, cloned);
+    }
+
+    #[test]
+    fn test_session_status_debug() {
+        let debug_str = format!("{:?}", SessionStatus::Active);
+        assert!(debug_str.contains("Active"));
+    }
+}
