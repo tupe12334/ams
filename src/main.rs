@@ -3,7 +3,11 @@ use chrono::Utc;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "ams", version, about = "Agents Manager Service - Manage AI coding agent tmux sessions")]
+#[command(
+    name = "ams",
+    version,
+    about = "Agents Manager Service - Manage AI coding agent tmux sessions"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,

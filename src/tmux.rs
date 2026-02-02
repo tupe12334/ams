@@ -73,23 +73,27 @@ fn parse_sessions(output: &str) -> Result<Vec<Session>, TmuxError> {
             SessionStatus::Idle
         };
 
-        let activity_epoch: i64 = parts[2]
-            .parse()
-            .map_err(|_| TmuxError::ParseError(format!("Invalid activity timestamp: {}", parts[2])))?;
+        let activity_epoch: i64 = parts[2].parse().map_err(|_| {
+            TmuxError::ParseError(format!("Invalid activity timestamp: {}", parts[2]))
+        })?;
 
-        let created_epoch: i64 = parts[3]
-            .parse()
-            .map_err(|_| TmuxError::ParseError(format!("Invalid created timestamp: {}", parts[3])))?;
+        let created_epoch: i64 = parts[3].parse().map_err(|_| {
+            TmuxError::ParseError(format!("Invalid created timestamp: {}", parts[3]))
+        })?;
 
         let last_activity = Utc
             .timestamp_opt(activity_epoch, 0)
             .single()
-            .ok_or_else(|| TmuxError::ParseError(format!("Invalid activity epoch: {}", activity_epoch)))?;
+            .ok_or_else(|| {
+                TmuxError::ParseError(format!("Invalid activity epoch: {}", activity_epoch))
+            })?;
 
         let created_at = Utc
             .timestamp_opt(created_epoch, 0)
             .single()
-            .ok_or_else(|| TmuxError::ParseError(format!("Invalid created epoch: {}", created_epoch)))?;
+            .ok_or_else(|| {
+                TmuxError::ParseError(format!("Invalid created epoch: {}", created_epoch))
+            })?;
 
         let working_directory = PathBuf::from(parts[4]);
 
