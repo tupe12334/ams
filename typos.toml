@@ -1,0 +1,19 @@
+# typos configuration
+# https://github.com/crate-ci/typos
+
+[default]
+extend-ignore-re = [
+    # UUIDs
+    "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+]
+
+[files]
+extend-exclude = [
+    "Cargo.lock",
+    "target/",
+    ".git/",
+]
+
+[default.extend-words]
+# Add project-specific words that should not be flagged as typos
+ams = "ams"
