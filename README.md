@@ -1,5 +1,7 @@
 # AMS - Agents Manager Service
 
+[![Coverage](https://codecov.io/gh/tupe12334/ams/branch/main/graph/badge.svg)](https://codecov.io/gh/tupe12334/ams)
+
 A Rust CLI tool with TUI for managing multiple AI coding agents through tmux sessions.
 
 ## Overview
@@ -152,6 +154,31 @@ cargo fmt -- --check
 # Run clippy
 cargo clippy -- -D warnings
 ```
+
+### Test Coverage
+
+This project enforces 100% test coverage. All new code must include tests.
+
+Install cargo-llvm-cov for coverage reports:
+
+```bash
+cargo install cargo-llvm-cov
+```
+
+Run coverage locally:
+
+```bash
+# Run tests with coverage check (fails if below 100%)
+cargo llvm-cov --fail-under-lines 100
+
+# Generate HTML report
+cargo llvm-cov --html --open
+
+# Generate lcov report
+cargo llvm-cov --lcov --output-path lcov.info
+```
+
+Coverage reports are automatically generated in CI and uploaded as artifacts.
 
 ## License
 

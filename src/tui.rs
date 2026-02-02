@@ -1,4 +1,5 @@
-use crate::{list_sessions, Session, SessionStatus};
+use crate::session::{Session, SessionStatus};
+use crate::tmux::list_sessions;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -198,4 +199,159 @@ fn ui(frame: &mut Frame, app: &mut App) {
         .highlight_symbol("▶ ");
 
     frame.render_stateful_widget(table, area, &mut app.table_state);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+    use std::path::PathBuf;
+
+    fn create_test_session(name: &str, status: SessionStatus) -> Session {
+        Session {
+            name: name.to_string(),
+            status,
+            working_directory: PathBuf::from("/test/path"),
+            last_activity: Utc::now(),
+            created_at: Utc::now(),
+            window_count: 1,
+        }
+    }
+
+    #[test]
+    fn test_app_new() {
+        let app = App::new();
+        assert!(app.sessions.is_empty());
+        assert!(app.table_state.selected().is_none());
+        assert!(!app.should_quit);
+        assert!(app.selected_session.is_none());
+    }
+
+    #[test]
+    fn test_app_default() {
+        let app = App::default();
+        assert!(app.sessions.is_empty());
+        assert!(!app.should_quit);
+    }
+
+    #[test]
+    fn test_app_next_empty() {
+        let mut app = App::new();
+        app.next();
+        // Should not panic or change state with empty sessions
+        assert!(app.table_state.selected().is_none());
+    }
+
+    #[test]
+    fn test_app_previous_empty() {
+        let mut app = App::new();
+        app.previous();
+        // Should not panic or change state with empty sessions
+        assert!(app.table_state.selected().is_none());
+    }
+
+    #[test]
+    fn test_app_next_with_sessions() {
+        let mut app = App::new();
+        app.sessions = vec![
+            create_test_session("session1", SessionStatus::Active),
+            create_test_session("session2", SessionStatus::Idle),
+            create_test_session("session3", SessionStatus::Dead),
+        ];
+        app.table_state.select(Some(0));
+
+        app.next();
+        assert_eq!(app.table_state.selected(), Some(1));
+
+        app.next();
+        assert_eq!(app.table_state.selected(), Some(2));
+
+        // Wrap around
+        app.next();
+        assert_eq!(app.table_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_app_previous_with_sessions() {
+        let mut app = App::new();
+        app.sessions = vec![
+            create_test_session("session1", SessionStatus::Active),
+            create_test_session("session2", SessionStatus::Idle),
+            create_test_session("session3", SessionStatus::Dead),
+        ];
+        app.table_state.select(Some(2));
+
+        app.previous();
+        assert_eq!(app.table_state.selected(), Some(1));
+
+        app.previous();
+        assert_eq!(app.table_state.selected(), Some(0));
+
+        // Wrap around
+        app.previous();
+        assert_eq!(app.table_state.selected(), Some(2));
+    }
+
+    #[test]
+    fn test_app_next_no_selection() {
+        let mut app = App::new();
+        app.sessions = vec![create_test_session("session1", SessionStatus::Active)];
+        // No selection initially
+        app.table_state.select(None);
+
+        app.next();
+        assert_eq!(app.table_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_app_previous_no_selection() {
+        let mut app = App::new();
+        app.sessions = vec![create_test_session("session1", SessionStatus::Active)];
+        // No selection initially
+        app.table_state.select(None);
+
+        app.previous();
+        assert_eq!(app.table_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_app_select_current() {
+        let mut app = App::new();
+        app.sessions = vec![
+            create_test_session("session1", SessionStatus::Active),
+            create_test_session("session2", SessionStatus::Idle),
+        ];
+        app.table_state.select(Some(1));
+
+        app.select_current();
+
+        assert!(app.should_quit);
+        assert_eq!(app.selected_session, Some("session2".to_string()));
+    }
+
+    #[test]
+    fn test_app_select_current_no_selection() {
+        let mut app = App::new();
+        app.sessions = vec![create_test_session("session1", SessionStatus::Active)];
+        // No selection
+        app.table_state.select(None);
+
+        app.select_current();
+
+        assert!(!app.should_quit);
+        assert!(app.selected_session.is_none());
+    }
+
+    #[test]
+    fn test_app_select_current_out_of_bounds() {
+        let mut app = App::new();
+        app.sessions = vec![create_test_session("session1", SessionStatus::Active)];
+        // Selection beyond bounds
+        app.table_state.select(Some(5));
+
+        app.select_current();
+
+        assert!(!app.should_quit);
+        assert!(app.selected_session.is_none());
+    }
 }

@@ -73,23 +73,27 @@ fn parse_sessions(output: &str) -> Result<Vec<Session>, TmuxError> {
             SessionStatus::Idle
         };
 
-        let activity_epoch: i64 = parts[2]
-            .parse()
-            .map_err(|_| TmuxError::ParseError(format!("Invalid activity timestamp: {}", parts[2])))?;
+        let activity_epoch: i64 = parts[2].parse().map_err(|_| {
+            TmuxError::ParseError(format!("Invalid activity timestamp: {}", parts[2]))
+        })?;
 
-        let created_epoch: i64 = parts[3]
-            .parse()
-            .map_err(|_| TmuxError::ParseError(format!("Invalid created timestamp: {}", parts[3])))?;
+        let created_epoch: i64 = parts[3].parse().map_err(|_| {
+            TmuxError::ParseError(format!("Invalid created timestamp: {}", parts[3]))
+        })?;
 
         let last_activity = Utc
             .timestamp_opt(activity_epoch, 0)
             .single()
-            .ok_or_else(|| TmuxError::ParseError(format!("Invalid activity epoch: {}", activity_epoch)))?;
+            .ok_or_else(|| {
+                TmuxError::ParseError(format!("Invalid activity epoch: {}", activity_epoch))
+            })?;
 
         let created_at = Utc
             .timestamp_opt(created_epoch, 0)
             .single()
-            .ok_or_else(|| TmuxError::ParseError(format!("Invalid created epoch: {}", created_epoch)))?;
+            .ok_or_else(|| {
+                TmuxError::ParseError(format!("Invalid created epoch: {}", created_epoch))
+            })?;
 
         let working_directory = PathBuf::from(parts[4]);
 
@@ -203,6 +207,12 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_sessions_whitespace_only() {
+        let result = parse_sessions("   \n\t\n   ").unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
     fn test_parse_sessions_single() {
         let output = "test-session\t0\t1704067200\t1704067200\t/home/user/project\t1";
         let sessions = parse_sessions(output).unwrap();
@@ -218,5 +228,95 @@ mod tests {
         let sessions = parse_sessions(output).unwrap();
         assert_eq!(sessions.len(), 1);
         assert_eq!(sessions[0].status, SessionStatus::Active);
+    }
+
+    #[test]
+    fn test_parse_sessions_multiple() {
+        let output = "session1\t0\t1704067200\t1704067200\t/home/user/proj1\t1\n\
+                      session2\t2\t1704067200\t1704067200\t/home/user/proj2\t3";
+        let sessions = parse_sessions(output).unwrap();
+        assert_eq!(sessions.len(), 2);
+        assert_eq!(sessions[0].name, "session1");
+        assert_eq!(sessions[0].status, SessionStatus::Idle);
+        assert_eq!(sessions[1].name, "session2");
+        assert_eq!(sessions[1].status, SessionStatus::Active);
+        assert_eq!(sessions[1].window_count, 3);
+    }
+
+    #[test]
+    fn test_parse_sessions_insufficient_fields() {
+        let output = "session\t0\t1704067200";
+        let result = parse_sessions(output);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, TmuxError::ParseError(_)));
+    }
+
+    #[test]
+    fn test_parse_sessions_invalid_attached_count() {
+        let output = "session\tnot_a_number\t1704067200\t1704067200\t/home/user\t1";
+        let result = parse_sessions(output);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, TmuxError::ParseError(_)));
+    }
+
+    #[test]
+    fn test_parse_sessions_invalid_activity_timestamp() {
+        let output = "session\t0\tnot_a_timestamp\t1704067200\t/home/user\t1";
+        let result = parse_sessions(output);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_sessions_invalid_created_timestamp() {
+        let output = "session\t0\t1704067200\tnot_a_timestamp\t/home/user\t1";
+        let result = parse_sessions(output);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_sessions_invalid_window_count() {
+        let output = "session\t0\t1704067200\t1704067200\t/home/user\tnot_a_number";
+        let result = parse_sessions(output);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_sessions_invalid_activity_epoch() {
+        // Use an epoch value that results in None from timestamp_opt
+        let output = "session\t0\t-9999999999999999\t1704067200\t/home/user\t1";
+        let result = parse_sessions(output);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_sessions_invalid_created_epoch() {
+        // Use an epoch value that results in None from timestamp_opt
+        let output = "session\t0\t1704067200\t-9999999999999999\t/home/user\t1";
+        let result = parse_sessions(output);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_tmux_error_display() {
+        let err = TmuxError::ServerNotRunning;
+        assert_eq!(err.to_string(), "Tmux server not running");
+
+        let err = TmuxError::SessionNotFound("test".to_string());
+        assert_eq!(err.to_string(), "Session not found: test");
+
+        let err = TmuxError::SessionExists("test".to_string());
+        assert_eq!(err.to_string(), "Session already exists: test");
+
+        let err = TmuxError::ParseError("invalid".to_string());
+        assert_eq!(err.to_string(), "Failed to parse tmux output: invalid");
+    }
+
+    #[test]
+    fn test_tmux_error_debug() {
+        let err = TmuxError::ServerNotRunning;
+        let debug_str = format!("{:?}", err);
+        assert!(debug_str.contains("ServerNotRunning"));
     }
 }
