@@ -82,7 +82,8 @@
       "WebSearch",
       "Bash(echo:*)",
       "Bash(done)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(sort:*)"
     ],
     "deny": ["Bash(npm install)"]
   },
