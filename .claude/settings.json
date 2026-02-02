@@ -83,7 +83,8 @@
       "Bash(echo:*)",
       "Bash(done)",
       "Bash(cat:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(typos:*)"
     ],
     "deny": ["Bash(npm install)"]
   },
