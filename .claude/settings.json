@@ -85,7 +85,9 @@
       "Bash(cat:*)",
       "Bash(sort:*)",
       "Bash(typos:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(for f in .centy/issues/*.md)",
+      "Bash(fi:*)"
     ],
     "deny": ["Bash(npm install)"]
   },
