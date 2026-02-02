@@ -2,6 +2,9 @@
 name = "ams"
 version = "0.1.0"
 edition = "2021"
+description = "Agents Manager Service - Manage AI coding agent tmux sessions"
+authors = ["Ofek"]
+license = "MIT"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

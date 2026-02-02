@@ -3,7 +3,7 @@ use chrono::Utc;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "ams", about = "Agents Manager Service - Manage AI coding agent tmux sessions")]
+#[command(name = "ams", version, about = "Agents Manager Service - Manage AI coding agent tmux sessions")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -13,19 +13,57 @@ struct Cli {
 enum Commands {
     /// List all tmux sessions
     List,
+    /// Attach to a tmux session
+    Attach {
+        /// Name of the session to attach to
+        name: String,
+    },
+    /// Create a new tmux session
+    New {
+        /// Name for the new session
+        name: String,
+        /// Working directory for the session
+        #[arg(short, long)]
+        directory: Option<String>,
+    },
+    /// Kill a tmux session
+    Kill {
+        /// Name of the session to kill
+        name: String,
+    },
 }
 
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command {
-        Some(Commands::List) | None => {
-            if let Err(e) = run_list() {
-                eprintln!("Error: {}", e);
-                std::process::exit(1);
-            }
-        }
+    let result = match cli.command {
+        Some(Commands::List) | None => run_list(),
+        Some(Commands::Attach { name }) => run_attach(&name),
+        Some(Commands::New { name, directory }) => run_new(&name, directory.as_deref()),
+        Some(Commands::Kill { name }) => run_kill(&name),
+    };
+
+    if let Err(e) = result {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
     }
+}
+
+fn run_attach(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    ams::attach_session(name)?;
+    Ok(())
+}
+
+fn run_new(name: &str, directory: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
+    ams::create_session(name, directory)?;
+    println!("Created session: {}", name);
+    Ok(())
+}
+
+fn run_kill(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    ams::kill_session(name)?;
+    println!("Killed session: {}", name);
+    Ok(())
 }
 
 fn run_list() -> Result<(), Box<dyn std::error::Error>> {

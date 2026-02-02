@@ -14,6 +14,12 @@ pub enum TmuxError {
 
     #[error("Tmux server not running")]
     ServerNotRunning,
+
+    #[error("Session not found: {0}")]
+    SessionNotFound(String),
+
+    #[error("Session already exists: {0}")]
+    SessionExists(String),
 }
 
 /// Lists all tmux sessions with their metadata
@@ -102,6 +108,88 @@ fn parse_sessions(output: &str) -> Result<Vec<Session>, TmuxError> {
     }
 
     Ok(sessions)
+}
+
+/// Attaches to an existing tmux session
+pub fn attach_session(name: &str) -> Result<(), TmuxError> {
+    let status = Command::new("tmux")
+        .args(["attach-session", "-t", name])
+        .status()?;
+
+    if !status.success() {
+        return Err(TmuxError::SessionNotFound(name.to_string()));
+    }
+
+    Ok(())
+}
+
+/// Creates a new tmux session
+pub fn create_session(name: &str, directory: Option<&str>) -> Result<(), TmuxError> {
+    let mut cmd = Command::new("tmux");
+    cmd.args(["new-session", "-d", "-s", name]);
+
+    if let Some(dir) = directory {
+        cmd.args(["-c", dir]);
+    }
+
+    let output = cmd.output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("duplicate session") {
+            return Err(TmuxError::SessionExists(name.to_string()));
+        }
+        return Err(TmuxError::ParseError(stderr.to_string()));
+    }
+
+    Ok(())
+}
+
+/// Kills a tmux session
+pub fn kill_session(name: &str) -> Result<(), TmuxError> {
+    let output = Command::new("tmux")
+        .args(["kill-session", "-t", name])
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("session not found") || stderr.contains("can't find session") {
+            return Err(TmuxError::SessionNotFound(name.to_string()));
+        }
+        return Err(TmuxError::ParseError(stderr.to_string()));
+    }
+
+    Ok(())
+}
+
+/// Gets information about a specific session
+pub fn get_session(name: &str) -> Result<Session, TmuxError> {
+    let filter = format!("#{{==:#{{session_name}},{}}}", name);
+    let output = Command::new("tmux")
+        .args([
+            "list-sessions",
+            "-F",
+            "#{session_name}\t#{session_attached}\t#{session_activity}\t#{session_created}\t#{pane_current_path}\t#{session_windows}",
+            "-f",
+            &filter,
+        ])
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("no server running") || stderr.contains("no sessions") {
+            return Err(TmuxError::SessionNotFound(name.to_string()));
+        }
+        return Err(TmuxError::ParseError(stderr.to_string()));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let sessions = parse_sessions(&stdout)?;
+
+    sessions
+        .into_iter()
+        .next()
+        .ok_or_else(|| TmuxError::SessionNotFound(name.to_string()))
 }
 
 #[cfg(test)]
