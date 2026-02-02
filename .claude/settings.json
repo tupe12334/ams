@@ -84,7 +84,8 @@
       "Bash(done)",
       "Bash(cat:*)",
       "Bash(sort:*)",
-      "Bash(typos:*)"
+      "Bash(typos:*)",
+      "Bash(xargs:*)"
     ],
     "deny": ["Bash(npm install)"]
   },
