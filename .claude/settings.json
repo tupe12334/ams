@@ -80,7 +80,8 @@
       "WebFetch(domain:git-scm.com)",
       "WebFetch(domain:cli.github.com)",
       "WebSearch",
-      "Skill(tupe:ultrathink)"
+      "Bash(echo:*)",
+      "Bash(done)"
     ],
     "deny": ["Bash(npm install)"]
   },
